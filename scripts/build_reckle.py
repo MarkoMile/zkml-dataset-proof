@@ -1,42 +1,44 @@
 import csv, json, math, argparse, pickle, pathlib
 from typing import List
-from poseidon_py import poseidon_hash
+from poseidon_py import poseidon_hash           # BN254 kao i kod Noir-a
 
-
+# mapiramo teks -> int
 YESNO   = {"yes": 1, "no": 0}
 FURNISH = {"unfurnished": 0, "semi-furnished": 1, "furnished": 2}
 
 def parse_row(row: List[str]) -> List[int]:
+    """13 stringova  ->  13 integera (< p)"""
     price, area, bedrooms, bathrooms, stories = map(int, row[:5])
 
-    mainroad          = YESNO[row[5].strip()]
-    guestroom         = YESNO[row[6].strip()]
-    basement          = YESNO[row[7].strip()]
-    hotwaterheating   = YESNO[row[8].strip()]
-    airconditioning   = YESNO[row[9].strip()]
-    parking           = int(row[10])
+    mainroad        = YESNO[row[5].strip()]
+    guestroom       = YESNO[row[6].strip()]
+    basement        = YESNO[row[7].strip()]
+    hotwaterheating = YESNO[row[8].strip()]
+    aircond         = YESNO[row[9].strip()]
+    parking         = int(row[10])
 
-    prefarea          = YESNO[row[11].strip()]
-    furnishingstatus  = FURNISH[row[12].strip()]
+    prefarea        = YESNO[row[11].strip()]
+    furnishing      = FURNISH[row[12].strip()]
 
     return [
         price, area, bedrooms, bathrooms, stories,
         mainroad, guestroom, basement, hotwaterheating,
-        airconditioning, parking, prefarea, furnishingstatus,
+        aircond, parking, prefarea, furnishing,
     ]
 
-def poseidon_leaf(ints: List[int]) -> int:
-    """Vrati Poseidon hash (kao int) liste field-elemenata."""
-    return poseidon_hash(ints)
+def leaf_hash(vals: List[int]) -> int:
+    """Poseidon(v0 ... v12 )"""
+    return poseidon_hash(vals)
 
-def hash_pair(left: int, right: int) -> int:
-    return poseidon_hash([left, right])
+def hash_pair(l: int, r: int) -> int:
+    """Internal node Poseidon( l , r )"""
+    return poseidon_hash([l, r])
 
 class Merkle:
     def __init__(self, leaves: List[int]):
-        self.depth = math.ceil(math.log2(len(leaves)))
+        self.depth = math.ceil(math.log2(len(leaves)))      # k takvo da 2^k ≥ n
         size       = 1 << self.depth
-        leaves    += [leaves[-1]] * (size - len(leaves))
+        leaves    += [leaves[-1]] * (size - len(leaves))     # pad zadnjim listom
         self.layers: List[List[int]] = [leaves]
         while len(self.layers[-1]) > 1:
             cur = self.layers[-1]
@@ -48,6 +50,7 @@ class Merkle:
         return self.layers[-1][0]
 
     def path(self, idx: int):
+        """siblings + directions (0-left, 1-right) odozdo nagore"""
         sibs, dirs = [], []
         for d in range(self.depth):
             layer = self.layers[d]
@@ -59,32 +62,32 @@ class Merkle:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="data.csv", help="path to CSV file")
-    ap.add_argument("--sample-index", type=int, default=0, help="which row to use for witness")
+    ap.add_argument("--csv", default="data.csv")
+    ap.add_argument("--sample-index", type=int, default=0)
     args = ap.parse_args()
 
-    # load data
-    rows = [parse_row(r) for r in csv.reader(open(args.csv))]
+    with open(args.csv, newline="") as f:
+        rdr = csv.reader(f)
+        next(rdr)                            # prvi red = nazivi kolona
+        rows = [parse_row(r) for r in rdr]
+
     if not (0 <= args.sample_index < len(rows)):
         raise ValueError("sample-index out of range")
 
-    # list hashes
-    leaves = [poseidon_leaf(r) for r in rows]
+    # List-hash + stablo
+    leaves = [leaf_hash(r) for r in rows]
+    tree   = Merkle(leaves)
 
-    # tree
-    tree  = Merkle(leaves)
-    root  = tree.root
-
-    # witness for selected example
-    sample_x = rows[args.sample_index][:-1]   # first 12 features
-    sample_y = rows[args.sample_index][-1]    # label (furnishingstatus)
+    # Witness za izabrani red
+    x = rows[args.sample_index][:-1]              # 12 feature-a
+    y = rows[args.sample_index][-1]               # label
     sibs, dirs = tree.path(args.sample_index)
 
     witness = {
-        "root": hex(root),
+        "root": hex(tree.root),
         "sample": {
-            "x": [str(v) for v in sample_x],
-            "y": str(sample_y)
+            "x": [str(v) for v in x],
+            "y": str(y)
         },
         "path": {
             "siblings": [hex(s) for s in sibs],
@@ -92,13 +95,14 @@ def main():
         }
     }
 
-    pathlib.Path("scripts").mkdir(exist_ok=True)
-    with open("scripts/witness.json", "w") as f:
-        json.dump(witness, f, indent=2)
-    with open("scripts/merkle.pkl", "wb") as f:
-        pickle.dump(tree, f)
+    out_dir = pathlib.Path("preprocessing")
+    out_dir.mkdir(exist_ok=True)
 
-    print("✔  witness.json is created   (root =", hex(root) + ")")
+    json.dump(witness, open(out_dir / "witness.json", "w"), indent=2)
+    pickle.dump(tree,   open(out_dir / "merkle.pkl",  "wb"))
+
+    print("witness.json -> ", (out_dir / "witness.json").resolve())
+    print("  root =", hex(tree.root))
 
 if __name__ == "__main__":
     main()
