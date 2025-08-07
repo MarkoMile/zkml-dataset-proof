@@ -4,7 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 export default function Header() {
   return (
     <header className="pt-4 sticky top-0 left-0">
-      <div className="w-3/4 backdrop-blur-sm bg-background/50 mx-auto rounded-full border border-gray-500 h-12 flex justify-between px-2">
+      <div className="w-3/4 backdrop-blur-sm bg-background/50 mx-auto shadow-primary shadow-sm rounded-full border border-gray-500 h-12 flex justify-between px-2">
         <div className="h-full flex items-center text-xl font-bold ml-1">
           WhaleML
         </div>

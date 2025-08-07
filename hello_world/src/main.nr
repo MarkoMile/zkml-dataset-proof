@@ -1,11 +1,5 @@
-fn main(x: Field, y: pub Field) {
-    assert(x != y);
-}
-
-#[test]
-fn test_main() {
-    main(1, 2);
-
-    // Uncomment to make test fail
-    // main(1, 1);
+fn main(x: [Field; 3], y: Field) {
+    print(x[0]);
+    print(y);
+    assert(x[0] == y);
 }

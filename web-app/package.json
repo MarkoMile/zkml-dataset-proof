@@ -9,10 +9,14 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aztec/bb.js": "1.2.1",
+    "@iarna/toml": "^2.2.5",
+    "@noir-lang/noir_js": "1.0.0-beta.6",
     "lucide-react": "^0.536.0",
     "next": "15.4.6",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "react-toastify": "^11.0.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
