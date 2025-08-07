@@ -84,7 +84,7 @@ def main():
     sibs, dirs = tree.path(args.sample_index)
 
     witness = {
-        "root": hex(tree.root),
+        "dataset_root": hex(tree.root),
         "sample": {
             "x": [str(v) for v in x],
             "y": str(y)
