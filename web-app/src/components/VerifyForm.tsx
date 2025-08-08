@@ -3,34 +3,35 @@ import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import FilesInput from "./FileInput";
-import { CheckIcon, XIcon } from "lucide-react";
+import { CheckIcon, XCircle, XIcon } from "lucide-react";
+import Input from "./Input";
 
 export default function VerifyForm() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<undefined | boolean>(undefined);
-  const [metadataUrl, setMetadataUrl] = useState("");
-  const [witnessUrl, setWitnessUrl] = useState("");
+
+  const [rho, setRho] = useState("");
+  const [deltaW, setDeltaW] = useState("");
+  const [b, setB] = useState("");
+  const [sigma, setSigma] = useState("");
 
   const [datasetFile, setDatasetFile] = useState<File>();
 
-  async function handleClick() {
-    if (!datasetFile) {
-      return;
-    }
+  async function handleProof() {
     setLoading(true);
 
+    setVerificationResult(undefined);
     setResult(undefined);
 
-    setMetadataUrl("");
-
-    setWitnessUrl("");
+    setRho("");
+    setDeltaW("");
+    setB("");
+    setSigma("");
 
     try {
       const formData = new FormData();
 
-      formData.set("datasetFile", datasetFile);
-
-      const res = await fetch(`/api/verify`, {
+      const res = await fetch(`/api/zk-new`, {
         method: "POST",
         body: formData,
       });
@@ -39,19 +40,16 @@ export default function VerifyForm() {
       if (res.ok) {
         setResult(resBody.isValid);
 
-        const metadataJsonString = JSON.stringify(resBody.metadata);
+        setVerificationResult(resBody.isValid);
 
-        const metadata = new Blob([metadataJsonString], {
-          type: "application/json",
-        });
+        const witnesses = resBody.witnesses;
 
-        setMetadataUrl(URL.createObjectURL(metadata));
-
-        const witness = new Blob([resBody.witness], {
-          type: "text/plain",
-        });
-
-        setWitnessUrl(URL.createObjectURL(witness));
+        if (witnesses) {
+          setRho(witnesses[0]);
+          setDeltaW(witnesses[1]);
+          setB(witnesses[2]);
+          setSigma(witnesses[3]);
+        }
       } else if (resBody.message) {
         toast.error(resBody.message);
       }
@@ -60,7 +58,37 @@ export default function VerifyForm() {
 
       console.log(error);
     }
-    setDatasetFile(undefined);
+
+    setLoading(false);
+  }
+
+  const [verificationResult, setVerificationResult] = useState<
+    undefined | boolean
+  >(undefined);
+
+  async function handleVerify() {
+    setLoading(true);
+
+    setVerificationResult(undefined);
+
+    try {
+      const res = await fetch(`/api/zk-verify`, {
+        method: "POST",
+        body: JSON.stringify({ witnesses: [rho, deltaW, b, sigma] }),
+      });
+
+      const resBody = await res.json();
+      if (res.ok) {
+        setVerificationResult(resBody.isValid);
+      } else if (resBody.message) {
+        toast.error(resBody.message);
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+
+      console.log(error);
+    }
+
     setLoading(false);
   }
 
@@ -72,60 +100,86 @@ export default function VerifyForm() {
 
   return (
     <div className="border flex flex-col items-center border-gray-500 rounded-xl p-6 shadow-primary shadow-sm w-full max-w-xl">
-      {result === true ? (
-        <div>
-          <CheckIcon size={32} className="text-emerald-500 mx-auto mb-2" />
-          <div className="text-emerald-500 font-medium mb-4">
-            ZK Proof Generated and Verified
-          </div>
-        </div>
-      ) : null}
-      {result === false ? (
-        <div>
-          <XIcon size={32} className="text-red-500 mx-auto mb-2" />
-          <div className="text-red-500 font-medium mb-4">
-            Failed to generate ZK Proof
-          </div>
-        </div>
-      ) : null}
-      {/* {metadataUrl && witnessUrl ? (
-        <div className="flex gap-3 mb-4">
-          <Link
-            className="text-primary flex"
-            target="_blank"
-            href={metadataUrl}
-          >
-            Metadata
-          </Link>
-
-          <Link className="text-primary flex" target="_blank" href={witnessUrl}>
-            Witness
-          </Link>
-        </div>
-      ) : null} */}
-
-      <div className="mb-4 items-center flex gap-3">
-        <FilesInput className="" file={datasetFile} setFile={setDatasetFile} />
-        {datasetFile ? (
-          <div className="flex items-center gap-3">
-            <div>
-              <div className="text-xs">File name:</div>
-              <div className="text-sm">{datasetFile.name}</div>
+      <div className="flex gap-3">
+        {result === true ? (
+          <div>
+            <CheckIcon size={32} className="text-emerald-500 mx-auto mb-2" />
+            <div className="text-emerald-500 font-medium mb-4">
+              ZK Proof Generated
             </div>
-            <button onClick={() => setDatasetFile(undefined)}>
-              <XIcon />
-            </button>
+          </div>
+        ) : null}
+        {result === false ? (
+          <div>
+            <XIcon size={32} className="text-red-500 mx-auto mb-2" />
+            <div className="text-red-500 font-medium mb-4">
+              Failed to generate ZK Proof
+            </div>
+          </div>
+        ) : null}
+        {verificationResult === true ? (
+          <div>
+            <CheckIcon size={32} className="text-sky-500 mx-auto mb-2" />
+            <div className="text-sky-500 font-medium mb-4">Proof verified</div>
+          </div>
+        ) : null}
+        {verificationResult === false ? (
+          <div>
+            <XCircle size={32} className="text-red-500 mx-auto mb-2" />
+            <div className="text-red-500 font-medium mb-4">
+              Proof not verified
+            </div>
           </div>
         ) : null}
       </div>
 
-      <button
-        onClick={handleClick}
-        disabled={loading}
-        className="primary-button w-full justify-center"
-      >
-        {loading ? "Loading..." : "Verify"}
-      </button>
+      {result === true ? (
+        <div className="space-y-4 mb-4 w-full">
+          <Input
+            value={rho}
+            setValue={setRho}
+            label="Rho"
+            className="bg-white w-full text-gray-800 border border-primary px-4 py-1 rounded-lg"
+          />
+          <Input
+            value={deltaW}
+            setValue={setDeltaW}
+            label="Delta W"
+            className="bg-white w-full text-gray-800 border border-primary px-4 py-1 rounded-lg"
+          />
+          <Input
+            value={b}
+            setValue={setB}
+            label="B"
+            className="bg-white w-full text-gray-800 border border-primary px-4 py-1 rounded-lg"
+          />
+          <Input
+            value={sigma}
+            setValue={setSigma}
+            label="Sigma"
+            className="bg-white w-full text-gray-800 border border-primary px-4 py-1 rounded-lg"
+          />
+        </div>
+      ) : null}
+
+      <div className="flex gap-3 w-full flex-1">
+        <button
+          onClick={handleProof}
+          disabled={loading}
+          className="primary-button flex-1 justify-center"
+        >
+          {loading ? "Loading..." : "Generate proof and verify"}
+        </button>
+        {result === true ? (
+          <button
+            onClick={handleVerify}
+            disabled={loading}
+            className="primary-button flex-1 justify-center"
+          >
+            {loading ? "Loading..." : "Verify with values"}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

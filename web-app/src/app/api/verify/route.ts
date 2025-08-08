@@ -4,24 +4,8 @@ import toml from "@iarna/toml";
 import { exec } from "child_process";
 import zlib from "zlib";
 import { promisify } from "util";
-import { poseidon, Poseidon } from "@iden3/js-crypto";
+import { poseidon } from "@iden3/js-crypto";
 import { parse } from "csv-parse/sync";
-import MerkleTree from "merkletreejs";
-
-function hashDataset(content: string) {
-  const input = [BigInt(Buffer.from(content).reduce((sum, b) => sum + b, 0))];
-
-  const hash = Poseidon.hash(input);
-
-  return hash.toString();
-}
-
-function poseidonHash(data: Buffer): Buffer {
-  const inputs: bigint[] = JSON.parse(data.toString());
-  const h = poseidon.hash(inputs);
-  const hex = h.toString(16);
-  return Buffer.from(hex.padStart(hex.length + (hex.length % 2), "0"), "hex");
-}
 
 const execAsync = promisify(exec);
 const gunzipAsync = promisify(zlib.gunzip);
@@ -65,8 +49,8 @@ export async function POST(request: NextRequest) {
 
   const mappedRows = mapToNumeric(datasetRows);
 
-  const ROW_COUNT = 1;
-  const COLUMN_COUNT = 5;
+  const ROW_COUNT = 5;
+  const COLUMN_COUNT = 2;
 
   const finalRows = mappedRows
     .map((row) => row.slice(0, COLUMN_COUNT))
