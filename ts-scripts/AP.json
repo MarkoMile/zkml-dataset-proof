@@ -3,13 +3,13 @@
     "curve": "BLS12-381",
     "field": "BN254",
     "hash": "poseidon",
-    "kappa1": "0x0227c8a5c9c4e35c7e8fe54d1a6401dccafab9c0dd9a3aad22cdec049ddb499e",
-    "kappa2": "0x67678c76c1f3a83fbabceaa9f64d87cb21c02a38a57baf2d9ab5680d6f4f5fde",
-    "kappa3": "0x6fe30d8a88c86a9f883380b0d9fd872ef29442223330b8984fcf867352dca2e7",
-    "pk_ca": "0x8bba8f899aa8e6915805ad5f63e7d5fc760a54b28ecd2b0dde8fdfc0c401c1dc3d1a73b7dc2145cbc7c5e06e418fde56"
+    "kappa1": "0x433ab2c5dec810e347142e8b7e4da87aae2a7b3af7977e0503cd84ab0969da8d",
+    "kappa2": "0x22cff84a6727bee89af58d9b78348e4db4bb412a8a0688e5acc69197bb9b7278",
+    "kappa3": "0x644bfd0757ef80774b240cb5503382adeca18b4bc7e86dcfdda35d500ff004e9",
+    "pk_ca": "0xb1a86b12e032bcd98e3ac9ff4394d4647ef2a9a5735912cea21a8e30f33782f2b2d35003a6ab35dad3dce4c551f5ca21"
   },
   "Di": {
-    "source": "C:\\Users\\milan\\OneDrive\\Desktop\\zkml-dataset-proof\\ts-scripts\\dataset.csv",
+    "source": "/home/marko/petnica/polaznik/web3/projekat/zkml-dataset-proof/ts-scripts/dataset.csv",
     "nrows": 545,
     "columns": [
       "airconditioning",
@@ -34,9 +34,9 @@
       "country": "US",
       "purpose": "training"
     },
-    "id": "68eded0d-175a-4e07-8349-8ce8018d362c"
+    "id": "1af5572e-ad9f-4141-8108-fb2670997f32"
   },
-  "sigma": "0x9506956ade98d58341f2860aaa1c65fecb24448017c5f416369a822879246e4bb886d54b97a8361484af5fca4035b2ae16b223a054bb032375ba000281106eabd92a504aad7326473fd46b59c4061501d2545cc1cc9196fb1d81025bd33bc645",
+  "sigma": "0xb3cb2515a468aae42b8c019b32419a4ed2656192869c24a185d6f574a190e10da6e2a98fdceaef77089aa532b5a6dab4064cfb87dec1dafdcac758a45711749765d6798eacbffe691cf01785abe4368bd881c23dd7aa071930ce173e261f9fe5",
   "Ti": {
     "root": "0xe19965c64775361ed218c2619a847570d5f6ca8fc57130dae187d4f19ef4525",
     "leaf_count": 545,
