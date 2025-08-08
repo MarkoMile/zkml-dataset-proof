@@ -1,0 +1,34 @@
+{
+  "name": "ts-scripts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node --esm src/build_ap.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^24.2.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@iden3/js-crypto": "^1.3.1",
+    "@noble/bls12-381": "^1.4.0",
+    "acorn": "^8.15.0",
+    "acorn-walk": "^8.3.4",
+    "arg": "^4.1.3",
+    "create-require": "^1.1.1",
+    "csv-parse": "^6.1.0",
+    "diff": "^4.0.2",
+    "make-error": "^1.3.6",
+    "poseidon-lite": "^0.3.0",
+    "undici-types": "^7.10.0",
+    "uuid": "^11.1.0",
+    "v8-compile-cache-lib": "^3.0.1",
+    "yn": "^3.1.1"
+  }
+}
