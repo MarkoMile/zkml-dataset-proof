@@ -60,3 +60,20 @@ train();
 for (let i = 0; i < xs.length; i++) {
   console.log(`x=${xs[i]}  y=${ys[i]}  y_hat=${predict(xs[i]).toFixed(4)}`);
 }
+
+// Generate JSON output of the trained weights and biases
+const modelParams = {
+  weight: w,
+  bias: b,
+  metadata: {
+    epochs: epochs,
+    learningRate: learningRate,
+    trainingData: {
+      features: xs,
+      labels: ys
+    }
+  }
+};
+
+console.log('\nTrained model parameters:');
+console.log(JSON.stringify(modelParams, null, 2));
