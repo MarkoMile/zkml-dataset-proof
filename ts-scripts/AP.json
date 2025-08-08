@@ -1,51 +1,31 @@
 {
-  "pp": {
-    "curve": "BLS12-381",
-    "field": "BN254",
-    "hash": "poseidon",
-    "kappa1": "0x0227c8a5c9c4e35c7e8fe54d1a6401dccafab9c0dd9a3aad22cdec049ddb499e",
-    "kappa2": "0x67678c76c1f3a83fbabceaa9f64d87cb21c02a38a57baf2d9ab5680d6f4f5fde",
-    "kappa3": "0x6fe30d8a88c86a9f883380b0d9fd872ef29442223330b8984fcf867352dca2e7",
-    "pk_ca": "0x8bba8f899aa8e6915805ad5f63e7d5fc760a54b28ecd2b0dde8fdfc0c401c1dc3d1a73b7dc2145cbc7c5e06e418fde56"
-  },
-  "Di": {
-    "source": "C:\\Users\\milan\\OneDrive\\Desktop\\zkml-dataset-proof\\ts-scripts\\dataset.csv",
-    "nrows": 545,
+  "pk_ca": "0xb32070f2589ba9530d94d5efeb96e75cd32c7140da9238e4938fe335b73bf61749e2b9a7ad0b40f0c1ec54ffb76c7f18",
+  "sigma": "0xaee4a2418a7b286efdcd2f1266ccea99af366457439e49e3084bf03a64eebb2675373ffa32e0320499bfcf117a01459f0dc59d249d3466df3d751ac2627bccad76848d1dd875a99bd84bb855eb43face821ab77dc28bacca789a8ef6c5f9e84b",
+  "dataset": {
     "columns": [
-      "airconditioning",
       "area",
-      "basement",
-      "bathrooms",
-      "bedrooms",
-      "furnishingstatus",
-      "guestroom",
-      "hotwaterheating",
-      "mainroad",
-      "parking",
-      "prefarea",
-      "price",
-      "stories"
+      "price"
+    ],
+    "rows": [
+      [
+        7420,
+        13300000
+      ],
+      [
+        8960,
+        12250000
+      ],
+      [
+        9960,
+        12250000
+      ],
+      [
+        7500,
+        12215000
+      ]
     ]
   },
-  "mi": {
-    "rho": "0xe19965c64775361ed218c2619a847570d5f6ca8fc57130dae187d4f19ef4525",
-    "Att": {
-      "domain": "housing",
-      "country": "US",
-      "purpose": "training"
-    },
-    "id": "68eded0d-175a-4e07-8349-8ce8018d362c"
-  },
-  "sigma": "0x9506956ade98d58341f2860aaa1c65fecb24448017c5f416369a822879246e4bb886d54b97a8361484af5fca4035b2ae16b223a054bb032375ba000281106eabd92a504aad7326473fd46b59c4061501d2545cc1cc9196fb1d81025bd33bc645",
-  "Ti": {
-    "root": "0xe19965c64775361ed218c2619a847570d5f6ca8fc57130dae187d4f19ef4525",
-    "leaf_count": 545,
-    "sample_leaves": [
-      "0x1df0ca0139c640a8a41c9edb4619dc51a7ad752e509eed9bec68c3136993f21a",
-      "0x2af0800a3436b898e8d77cbe05b39bfbbd95f5fb2f08b7dfd24b416ac4cd0662",
-      "0x15cea75a9b7aac402b34044ac06630e9b032d4c845829ac68f9d5a5600d087ae"
-    ],
-    "hash": "poseidon",
-    "arity": 2
+  "m": {
+    "rho": "0x19d3f9991d1933603a1f21d3e0055d2f9d24077cc12f8b40ecc91e3c32b676ea"
   }
 }
