@@ -1,7 +1,9 @@
 "use client";
 import { toast } from "react-toastify";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import FilesInput from "./FileInput";
+import { CheckIcon, XIcon } from "lucide-react";
 
 export default function VerifyForm() {
   const [loading, setLoading] = useState(false);
@@ -12,6 +14,9 @@ export default function VerifyForm() {
   const [datasetFile, setDatasetFile] = useState<File>();
 
   async function handleClick() {
+    if (!datasetFile) {
+      return;
+    }
     setLoading(true);
 
     setResult(undefined);
@@ -23,9 +28,7 @@ export default function VerifyForm() {
     try {
       const formData = new FormData();
 
-      if (datasetFile) {
-        formData.set("datasetFile", datasetFile);
-      }
+      formData.set("datasetFile", datasetFile);
 
       const res = await fetch(`/api/verify`, {
         method: "POST",
@@ -57,19 +60,35 @@ export default function VerifyForm() {
 
       console.log(error);
     }
-
+    setDatasetFile(undefined);
     setLoading(false);
   }
 
+  useEffect(() => {
+    if (datasetFile) {
+      setResult(undefined);
+    }
+  }, [datasetFile]);
+
   return (
-    <div className="border border-gray-500 rounded-xl p-6 shadow-primary shadow-sm w-full max-w-xl">
+    <div className="border flex flex-col items-center border-gray-500 rounded-xl p-6 shadow-primary shadow-sm w-full max-w-xl">
       {result === true ? (
-        <div className="text-emerald-500 font-medium mb-4">Verified</div>
+        <div>
+          <CheckIcon size={32} className="text-emerald-500 mx-auto mb-2" />
+          <div className="text-emerald-500 font-medium mb-4">
+            ZK Proof Generated and Verified
+          </div>
+        </div>
       ) : null}
       {result === false ? (
-        <div className="text-red-500 font-medium mb-4">Not verified</div>
+        <div>
+          <XIcon size={32} className="text-red-500 mx-auto mb-2" />
+          <div className="text-red-500 font-medium mb-4">
+            Failed to generate ZK Proof
+          </div>
+        </div>
       ) : null}
-      {metadataUrl && witnessUrl ? (
+      {/* {metadataUrl && witnessUrl ? (
         <div className="flex gap-3 mb-4">
           <Link
             className="text-primary flex"
@@ -83,7 +102,22 @@ export default function VerifyForm() {
             Witness
           </Link>
         </div>
-      ) : null}
+      ) : null} */}
+
+      <div className="mb-4 items-center flex gap-3">
+        <FilesInput className="" file={datasetFile} setFile={setDatasetFile} />
+        {datasetFile ? (
+          <div className="flex items-center gap-3">
+            <div>
+              <div className="text-xs">File name:</div>
+              <div className="text-sm">{datasetFile.name}</div>
+            </div>
+            <button onClick={() => setDatasetFile(undefined)}>
+              <XIcon />
+            </button>
+          </div>
+        ) : null}
+      </div>
 
       <button
         onClick={handleClick}

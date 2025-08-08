@@ -6,7 +6,10 @@ export default function page() {
   return (
     <div className="w-3/4 h-full min-h-screen mx-auto flex flex-col gap-4 items-center justify-center">
       <VerifyForm />
-      <Link href="/" className="text-primary flex gap-2 items-center">
+      <Link
+        href="/"
+        className="text-primary hover:underline flex gap-2 items-center"
+      >
         Home <ArrowLeft size={16} />
       </Link>
     </div>
