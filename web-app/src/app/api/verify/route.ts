@@ -6,6 +6,7 @@ import zlib from "zlib";
 import { promisify } from "util";
 import { poseidon, Poseidon } from "@iden3/js-crypto";
 import { parse } from "csv-parse/sync";
+import MerkleTree from "merkletreejs";
 
 function hashDataset(content: string) {
   const input = [BigInt(Buffer.from(content).reduce((sum, b) => sum + b, 0))];
@@ -13,6 +14,13 @@ function hashDataset(content: string) {
   const hash = Poseidon.hash(input);
 
   return hash.toString();
+}
+
+function poseidonHash(data: Buffer): Buffer {
+  const inputs: bigint[] = JSON.parse(data.toString());
+  const h = poseidon.hash(inputs);
+  const hex = h.toString(16);
+  return Buffer.from(hex.padStart(hex.length + (hex.length % 2), "0"), "hex");
 }
 
 const execAsync = promisify(exec);
@@ -28,8 +36,6 @@ export async function POST(request: NextRequest) {
   const datasetContent = await readFile("data.csv");
 
   const datasetRows = parse(datasetContent);
-
-  const datasetHash = hashDataset(datasetContent.toString());
 
   function mapToNumeric(csvData: string[][]): bigint[][] {
     // Skip header row, process data rows
@@ -59,16 +65,32 @@ export async function POST(request: NextRequest) {
 
   const mappedRows = mapToNumeric(datasetRows);
 
-  const datasetHashes = mappedRows.map((row) => {
-    return poseidon.hash(row).toString();
-  });
+  const ROW_COUNT = 100;
+  const COLUMN_COUNT = 5;
+
+  const finalRows = mappedRows
+    .map((row) => row.slice(0, COLUMN_COUNT))
+    .slice(0, ROW_COUNT);
+
+  let datasetHash = poseidon.hash(finalRows[0]);
+
+  for (let i = 1; i < finalRows.length; i++) {
+    const rowValue = finalRows[i];
+
+    const hashedRowValue = poseidon.hash(rowValue);
+    // SYSTEM WITH ADDING THE HASHED VALUE
+    datasetHash = poseidon.hash([datasetHash, hashedRowValue]);
+
+    // SYSTEM WITH ADDING THE VALUES
+    // datasetHash = poseidon.hash([datasetHash, ...rowValue]);
+  }
 
   const data = {
-    dataset_hashes: datasetHashes,
-    expected_rows: mappedRows,
+    dataset_hash: datasetHash.toString(),
+    expected_rows: finalRows,
   };
 
-  const tomlString = toml.stringify(data);
+  const tomlString = toml.stringify(data as any);
 
   try {
     fs.writeFile("circuits/Prover.toml", tomlString, () => null);
