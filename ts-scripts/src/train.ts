@@ -1,22 +1,22 @@
 // Full-batch gradient descent for y ≈ w*x + b
 // Dataset: 5 entries, 1 feature
 
+//hardcoded dataset
 const xs: number[] = [1, 2, 3, 4, 5];
 const ys: number[] = [3, 5, 7, 9, 11]; // roughly y = 2x + 1
 
-// Model params
-let w = 0; // weight
-let b = 0; // bias
+// Initial weights and biases
+const w0 = 0;
+const b0 = 0;
 
-// Hyperparams
-const learningRate = 0.01;
-const epochs = 10;
-
-function predict(x: number): number {
+function predict(x: number, w: number, b: number): number {
   return w * x + b;
 }
 
-function train(): void {
+function train(w0: number = 0, b0: number = 0, learningRate: number = 0.01, epochs: number = 10): { w: number, b: number, epochs: number, learningRate: number, xs: number[], ys: number[] } {
+  let w = w0;
+  let b = b0;
+  
   const n = xs.length;
   for (let epoch = 0; epoch < epochs; epoch++) {
     // Accumulate gradients over the whole batch
@@ -27,7 +27,7 @@ function train(): void {
     for (let i = 0; i < n; i++) {
       const x = xs[i];
       const y = ys[i];
-      const yHat = predict(x);
+      const yHat = predict(x, w, b);
       const err = yHat - y;
 
       // MSE components
@@ -52,19 +52,21 @@ function train(): void {
       console.log(`epoch=${epoch + 1}  mse=${mse.toFixed(6)}  w=${w.toFixed(6)}  b=${b.toFixed(6)}`);
     }
   }
+  
+  return { w, b , epochs, learningRate, xs, ys };
 }
 
-train();
+const { w: w1, b: b1, epochs : epochs, learningRate: learningRate} = train();
 
 // Test prediction
 for (let i = 0; i < xs.length; i++) {
-  console.log(`x=${xs[i]}  y=${ys[i]}  y_hat=${predict(xs[i]).toFixed(4)}`);
+  console.log(`x=${xs[i]}  y=${ys[i]}  y_hat=${predict(xs[i], w1, b1).toFixed(4)}`);
 }
 
 // Generate JSON output of the trained weights and biases
 const modelParams = {
-  weight: w,
-  bias: b,
+  weight: w1,
+  bias: b1,
   metadata: {
     epochs: epochs,
     learningRate: learningRate,
