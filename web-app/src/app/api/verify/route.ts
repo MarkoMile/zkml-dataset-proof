@@ -4,6 +4,16 @@ import toml from "@iarna/toml";
 import { exec } from "child_process";
 import zlib from "zlib";
 import { promisify } from "util";
+import { poseidon, Poseidon } from "@iden3/js-crypto";
+import { parse } from "csv-parse/sync";
+
+function hashDataset(content: string) {
+  const input = [BigInt(Buffer.from(content).reduce((sum, b) => sum + b, 0))];
+
+  const hash = Poseidon.hash(input);
+
+  return hash.toString();
+}
 
 const execAsync = promisify(exec);
 const gunzipAsync = promisify(zlib.gunzip);
@@ -13,13 +23,49 @@ const readFile = promisify(fs.readFile);
 export async function POST(request: NextRequest) {
   const requestFormData = await request.formData();
 
-  const housingDataSetFile = requestFormData.get("housingDataSetFile");
+  const datasetFile = requestFormData.get("datasetFile");
 
-  const age = 16;
+  const datasetContent = await readFile("data.csv");
+
+  const datasetRows = parse(datasetContent);
+
+  const datasetHash = hashDataset(datasetContent.toString());
+
+  function mapToNumeric(csvData: string[][]): bigint[][] {
+    // Skip header row, process data rows
+    return csvData.slice(1).map((row) =>
+      row.map((value, index) => {
+        if (
+          index === 5 ||
+          index === 6 ||
+          index === 7 ||
+          index === 8 ||
+          index === 9 ||
+          index === 11
+        ) {
+          // Boolean fields: mainroad, guestroom, basement, hotwaterheating, airconditioning, prefarea
+          return BigInt(value === "yes" ? 1 : 0);
+        } else if (index === 12) {
+          // Furnishing status: furnished -> 2, semi-furnished -> 1, unfurnished -> 0
+          return BigInt(
+            value === "furnished" ? 2 : value === "semi-furnished" ? 1 : 0
+          );
+        }
+        // Numeric fields: parse to integer
+        return BigInt(value);
+      })
+    );
+  }
+
+  const mappedRows = mapToNumeric(datasetRows);
+
+  const datasetHashes = mappedRows.map((row) => {
+    return poseidon.hash(row).toString();
+  });
 
   const data = {
-    x: 1,
-    y: 2,
+    dataset_hashes: datasetHashes,
+    expected_rows: mappedRows,
   };
 
   const tomlString = toml.stringify(data);
@@ -38,9 +84,9 @@ export async function POST(request: NextRequest) {
     // Read and decompress commitment from gz file
     const gzBuffer = await readFile("circuits/target/circuits.gz");
     const decompressed = await gunzipAsync(gzBuffer);
-    const commitment = decompressed.toString("utf-8").trim();
+    const witness = decompressed.toString("utf-8").trim();
 
-    return NextResponse.json({ isValid, metadata, commitment });
+    return NextResponse.json({ isValid, metadata, witness });
   } catch (error) {
     console.error("Verification error:", error);
 

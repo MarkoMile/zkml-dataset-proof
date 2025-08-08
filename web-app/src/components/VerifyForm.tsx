@@ -1,22 +1,31 @@
 "use client";
 import { toast } from "react-toastify";
 import { useState } from "react";
-import { s } from "motion/react-client";
 import Link from "next/link";
 
 export default function VerifyForm() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<undefined | boolean>(undefined);
   const [metadataUrl, setMetadataUrl] = useState("");
-  const [commitmentUrl, setCommitmentUrl] = useState("");
+  const [witnessUrl, setWitnessUrl] = useState("");
+
+  const [datasetFile, setDatasetFile] = useState<File>();
 
   async function handleClick() {
     setLoading(true);
 
     setResult(undefined);
 
+    setMetadataUrl("");
+
+    setWitnessUrl("");
+
     try {
       const formData = new FormData();
+
+      if (datasetFile) {
+        formData.set("datasetFile", datasetFile);
+      }
 
       const res = await fetch(`/api/verify`, {
         method: "POST",
@@ -35,11 +44,11 @@ export default function VerifyForm() {
 
         setMetadataUrl(URL.createObjectURL(metadata));
 
-        const commitment = new Blob([resBody.commitment], {
+        const witness = new Blob([resBody.witness], {
           type: "text/plain",
         });
 
-        setCommitmentUrl(URL.createObjectURL(commitment));
+        setWitnessUrl(URL.createObjectURL(witness));
       } else if (resBody.message) {
         toast.error(resBody.message);
       }
@@ -60,7 +69,7 @@ export default function VerifyForm() {
       {result === false ? (
         <div className="text-red-500 font-medium mb-4">Not verified</div>
       ) : null}
-      {metadataUrl && commitmentUrl ? (
+      {metadataUrl && witnessUrl ? (
         <div className="flex gap-3 mb-4">
           <Link
             className="text-primary flex"
@@ -70,12 +79,8 @@ export default function VerifyForm() {
             Metadata
           </Link>
 
-          <Link
-            className="text-primary flex"
-            target="_blank"
-            href={commitmentUrl}
-          >
-            Commitment
+          <Link className="text-primary flex" target="_blank" href={witnessUrl}>
+            Witness
           </Link>
         </div>
       ) : null}
