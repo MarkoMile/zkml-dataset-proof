@@ -10,7 +10,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "ZKML Dataset Proof",
-  description: "Guarantee AI Integrity, Detect Compromise & Corruption",
+  description: "Guarantee AI Dataset Integrity, Detect Compromise & Corruption",
 };
 
 export default function RootLayout({

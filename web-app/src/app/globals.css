@@ -23,7 +23,7 @@ body {
 }
 
 .primary-button{
-  @apply bg-primary rounded-full text-foreground font-medium h-8 px-4 flex items-center border border-primary-darker
+  @apply cursor-pointer hover:bg-primary-darker transition-colors bg-primary rounded-full text-foreground font-medium h-8 px-4 flex items-center border border-primary-darker
 }
 
 .gradient-primary-1{
