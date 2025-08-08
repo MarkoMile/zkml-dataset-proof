@@ -1,0 +1,24 @@
+{
+  "weight": 1.9687949803077376,
+  "bias": 0.5601774366903562,
+  "metadata": {
+    "epochs": 10,
+    "learningRate": 0.01,
+    "trainingData": {
+      "features": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "labels": [
+        3,
+        5,
+        7,
+        9,
+        11
+      ]
+    }
+  }
+}

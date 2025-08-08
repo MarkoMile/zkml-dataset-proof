@@ -1,6 +1,9 @@
 // Full-batch gradient descent for y ≈ w*x + b
 // Dataset: 5 entries, 1 feature
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 //hardcoded dataset
 const xs: number[] = [1, 2, 3, 4, 5];
 const ys: number[] = [3, 5, 7, 9, 11]; // roughly y = 2x + 1
@@ -79,3 +82,8 @@ const modelParams = {
 
 console.log('\nTrained model parameters:');
 console.log(JSON.stringify(modelParams, null, 2));
+
+// Save JSON to file
+const outputPath = path.join('trained_model.json');
+fs.writeFileSync(outputPath, JSON.stringify(modelParams, null, 2));
+console.log(`\nModel parameters saved to: ${outputPath}`);
