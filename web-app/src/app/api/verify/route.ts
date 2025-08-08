@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
   const mappedRows = mapToNumeric(datasetRows);
 
-  const ROW_COUNT = 20;
+  const ROW_COUNT = 1;
   const COLUMN_COUNT = 5;
 
   const finalRows = mappedRows

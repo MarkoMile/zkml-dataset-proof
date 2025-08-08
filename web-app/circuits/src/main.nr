@@ -1,6 +1,6 @@
 use dep::poseidon;
 
-global ROW_COUNT: u32 = 20;
+global ROW_COUNT: u32 = 1;
 global COLUMN_COUNT: u32 = 5;
 
 fn main(dataset_hash: Field, expected_rows: pub [[Field; COLUMN_COUNT]; ROW_COUNT]) {
