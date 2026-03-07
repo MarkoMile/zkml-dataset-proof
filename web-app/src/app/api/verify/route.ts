@@ -1,81 +1,92 @@
 import fs from "fs";
+import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import toml from "@iarna/toml";
 import { exec } from "child_process";
 import zlib from "zlib";
 import { promisify } from "util";
-import { poseidon, Poseidon } from "@iden3/js-crypto";
-import { parse } from "csv-parse/sync";
-
-function hashDataset(content: string) {
-  const input = [BigInt(Buffer.from(content).reduce((sum, b) => sum + b, 0))];
-
-  const hash = Poseidon.hash(input);
-
-  return hash.toString();
-}
+import { Poseidon } from "@iden3/js-crypto";
 
 const execAsync = promisify(exec);
 const gunzipAsync = promisify(zlib.gunzip);
-
 const readFile = promisify(fs.readFile);
 
-export async function POST(request: NextRequest) {
-  const requestFormData = await request.formData();
+const P = 21888242871839275222246405745257275088548364400416034343698204186575808495617n;
 
-  const datasetFile = requestFormData.get("datasetFile");
+function modP(x: bigint): bigint {
+  const r = x % P;
+  return r >= 0n ? r : r + P;
+}
 
-  const datasetContent = await readFile("data.csv");
-
-  const datasetRows = parse(datasetContent);
-
-  const datasetHash = hashDataset(datasetContent.toString());
-
-  function mapToNumeric(csvData: string[][]): bigint[][] {
-    // Skip header row, process data rows
-    return csvData.slice(1).map((row) =>
-      row.map((value, index) => {
-        if (
-          index === 5 ||
-          index === 6 ||
-          index === 7 ||
-          index === 8 ||
-          index === 9 ||
-          index === 11
-        ) {
-          // Boolean fields: mainroad, guestroom, basement, hotwaterheating, airconditioning, prefarea
-          return BigInt(value === "yes" ? 1 : 0);
-        } else if (index === 12) {
-          // Furnishing status: furnished -> 2, semi-furnished -> 1, unfurnished -> 0
-          return BigInt(
-            value === "furnished" ? 2 : value === "semi-furnished" ? 1 : 0
-          );
-        }
-        // Numeric fields: parse to integer
-        return BigInt(value);
-      })
-    );
+function toBigIntSafe(x: any): bigint {
+  if (typeof x === "bigint") return modP(x);
+  if (typeof x === "number") return modP(BigInt(Math.trunc(x)));
+  if (typeof x === "string") {
+    const s = x.trim();
+    const bi = s.startsWith("0x") ? BigInt(s) : BigInt(s);
+    return modP(bi);
   }
+  throw new Error(`Cannot convert to BigInt: ${x}`);
+}
 
-  const mappedRows = mapToNumeric(datasetRows);
+function H(inputs: bigint[]): bigint {
+  return modP(Poseidon.hash(inputs));
+}
 
-  const datasetHashes = mappedRows.map((row) => {
-    return poseidon.hash(row).toString();
-  });
-
-  const data = {
-    dataset_hashes: datasetHashes,
-    expected_rows: mappedRows,
-  };
-
-  const tomlString = toml.stringify(data);
-
+export async function POST(request: NextRequest) {
   try {
-    fs.writeFile("circuits/Prover.toml", tomlString, () => null);
+    // Read required JSON files. 
+    // From within Next.js api route execution, process.cwd() is generally the root of the next.js project ('web-app')
+    const apPath = path.resolve(process.cwd(), "../ts-scripts/AP.json");
+    const modelPath = path.resolve(process.cwd(), "../trained_model.json");
 
-    const { stdout, stderr } = await execAsync("sudo ./scripts/prove.sh");
+    if (!fs.existsSync(apPath)) {
+      return NextResponse.json({ isValid: false, message: "AP.json not found." }, { status: 400 });
+    }
+    if (!fs.existsSync(modelPath)) {
+      return NextResponse.json({ isValid: false, message: "trained_model.json not found." }, { status: 400 });
+    }
 
-    const isValid = stderr.trim().includes("Proof verified successfully");
+    const apContent = await readFile(apPath, "utf8");
+    const modelContent = await readFile(modelPath, "utf8");
+
+    const ap = JSON.parse(apContent);
+    const modelRaw = JSON.parse(modelContent);
+
+    const rho = toBigIntSafe(ap?.m?.rho);
+    const sigma = toBigIntSafe(ap?.sigma);
+
+    const w1 = toBigIntSafe(modelRaw?.weight);
+    const w0 = modelRaw?.w0 !== undefined ? toBigIntSafe(modelRaw.w0) : 0n;
+
+    const deltaW = modP(w0 - w1);
+    const v = H([sigma, rho]);
+    const B = modP(deltaW * v);
+
+    const C_rho = H([rho]);
+    const C_deltaW = H([deltaW]);
+    const C_B = H([B]);
+    const C_sigma = H([sigma]);
+
+    const data = {
+      C_rho: C_rho.toString(),
+      C_dW: C_deltaW.toString(),
+      C_B: C_B.toString(),
+      C_sigma: C_sigma.toString(),
+      rho: rho.toString(),
+      dW: deltaW.toString(),
+      B: B.toString(),
+      sigma: sigma.toString(),
+    };
+
+    const tomlString = toml.stringify(data as any);
+
+    fs.writeFileSync("circuits/Prover.toml", tomlString);
+
+    // Call the original script to execute nargo and bb logic
+    const { stdout, stderr } = await execAsync("./scripts/prove.sh");
+
+    const isValid = stderr.trim().includes("Proof verified successfully") || stdout.trim().includes("Proof verified successfully");
 
     // Read metadata JSON
     const metadataJson = await readFile("circuits/target/circuits.json");
@@ -87,9 +98,8 @@ export async function POST(request: NextRequest) {
     const witness = decompressed.toString("utf-8").trim();
 
     return NextResponse.json({ isValid, metadata, witness });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Verification error:", error);
-
-    return NextResponse.json({ isValid: false });
+    return NextResponse.json({ isValid: false, message: error.message }, { status: 500 });
   }
 }
