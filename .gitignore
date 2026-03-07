@@ -1,2 +1,6 @@
 ts-scripts/node_modules
 node_modules
+web-app/circuits/target/
+web-app/circuits/crs/
+web-app/crs/
+model_proof/
