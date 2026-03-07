@@ -35,6 +35,8 @@ function H(inputs: bigint[]): bigint {
 
 export async function POST(request: NextRequest) {
   try {
+    const requestFormData = await request.formData();
+
     // Read required JSON files. 
     // From within Next.js api route execution, process.cwd() is generally the root of the next.js project ('web-app')
     const apPath = path.resolve(process.cwd(), "../ts-scripts/AP.json");
@@ -68,15 +70,26 @@ export async function POST(request: NextRequest) {
     const C_B = H([B]);
     const C_sigma = H([sigma]);
 
+    // Apply optional overrides
+    const overrideRho = requestFormData.get("rho")?.toString();
+    const overrideDW = requestFormData.get("dW")?.toString();
+    const overrideB = requestFormData.get("B")?.toString();
+    const overrideSigma = requestFormData.get("sigma")?.toString();
+
+    const finalRho = overrideRho ? toBigIntSafe(overrideRho) : rho;
+    const finalDW = overrideDW ? toBigIntSafe(overrideDW) : deltaW;
+    const finalB = overrideB ? toBigIntSafe(overrideB) : B;
+    const finalSigma = overrideSigma ? toBigIntSafe(overrideSigma) : sigma;
+
     const data = {
       C_rho: C_rho.toString(),
       C_dW: C_deltaW.toString(),
       C_B: C_B.toString(),
       C_sigma: C_sigma.toString(),
-      rho: rho.toString(),
-      dW: deltaW.toString(),
-      B: B.toString(),
-      sigma: sigma.toString(),
+      rho: finalRho.toString(),
+      dW: finalDW.toString(),
+      B: finalB.toString(),
+      sigma: finalSigma.toString(),
     };
 
     const tomlString = toml.stringify(data as any);
@@ -84,20 +97,47 @@ export async function POST(request: NextRequest) {
     fs.writeFileSync("circuits/Prover.toml", tomlString);
 
     // Call the original script to execute nargo and bb logic
-    const { stdout, stderr } = await execAsync("./scripts/prove.sh");
+    let stdout = "";
+    let stderr = "";
+    let isValid = false;
+    try {
+      const result = await execAsync("./scripts/prove.sh");
+      stdout = result.stdout;
+      stderr = result.stderr;
+      isValid = stderr.trim().includes("Proof verified successfully") || stdout.trim().includes("Proof verified successfully");
+    } catch (e: any) {
+      stdout = e.stdout || "";
+      stderr = e.stderr || "";
+      isValid = false;
+    }
 
-    const isValid = stderr.trim().includes("Proof verified successfully") || stdout.trim().includes("Proof verified successfully");
+    let metadata = null;
+    let witness = "";
 
-    // Read metadata JSON
-    const metadataJson = await readFile("circuits/target/circuits.json");
-    const metadata = JSON.parse(metadataJson.toString());
+    try {
+      // Read metadata JSON
+      const metadataJson = await readFile("circuits/target/circuits.json");
+      metadata = JSON.parse(metadataJson.toString());
 
-    // Read and decompress commitment from gz file
-    const gzBuffer = await readFile("circuits/target/circuits.gz");
-    const decompressed = await gunzipAsync(gzBuffer);
-    const witness = decompressed.toString("utf-8").trim();
+      // Read and decompress commitment from gz file
+      const gzBuffer = await readFile("circuits/target/circuits.gz");
+      const decompressed = await gunzipAsync(gzBuffer);
+      witness = decompressed.toString("utf-8").trim();
+    } catch (err) {
+      // Ignore if files don't exist because proof generation completely failed
+    }
 
-    return NextResponse.json({ isValid, metadata, witness });
+    return NextResponse.json({ 
+      isValid, 
+      metadata, 
+      witness,
+      values: {
+        rho: finalRho.toString(),
+        dW: finalDW.toString(),
+        B: finalB.toString(),
+        sigma: finalSigma.toString()
+      }
+    });
   } catch (error: any) {
     console.error("Verification error:", error);
     return NextResponse.json({ isValid: false, message: error.message }, { status: 500 });
