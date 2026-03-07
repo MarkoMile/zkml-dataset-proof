@@ -62,13 +62,16 @@ export async function POST(request: NextRequest) {
     const w0 = modelRaw?.w0 !== undefined ? toBigIntSafe(modelRaw.w0) : 0n;
 
     const deltaW = modP(w0 - w1);
-    const v = H([sigma, rho]);
-    const B = modP(deltaW * v);
 
     const C_rho = H([rho]);
     const C_deltaW = H([deltaW]);
-    const C_B = H([B]);
     const C_sigma = H([sigma]);
+
+    // Fiat-Shamir challenge derivation
+    const v = H([C_rho, C_deltaW, C_sigma]);
+    const B = modP(deltaW * v);
+    
+    const C_B = H([B]);
 
     // Apply optional overrides
     const overrideRho = requestFormData.get("rho")?.toString();

@@ -70,20 +70,19 @@ if (!modelRaw) {
 const w1 = toBigIntSafe(modelRaw?.weight);
 const w0 = modelRaw?.w0 !== undefined ? toBigIntSafe(modelRaw.w0) : 0n;
 
-// ---------- compute deltaW, v, B ----------
+// ---------- compute commitments first ----------
 const deltaW = modP(w0 - w1);
-
-// Simple challenge v (no tags, no salt): v = Poseidon([sigma, rho])
-const v = H([sigma, rho]);
-
-// Simplified binding scalar
-const B = modP(deltaW * v);
-
-// ---------- commitments (NO tags, NO salts) ----------
 const C_rho = H([rho]);
 const C_deltaW = H([deltaW]);
-const C_B = H([B]);
 const C_sigma = H([sigma]);
+
+// ---------- Fiat-Shamir challenge v ----------
+// v = Poseidon([C_rho, C_deltaW, C_sigma])
+const v = H([C_rho, C_deltaW, C_sigma]);
+
+// ---------- compute B and its commitment ----------
+const B = modP(deltaW * v);
+const C_B = H([B]);
 
 export type SetupResult = {
   commitments: string[]; // [C_rho, C_deltaW, C_B, C_sigma]

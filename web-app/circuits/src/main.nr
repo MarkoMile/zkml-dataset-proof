@@ -13,8 +13,9 @@ fn main(
     B     : Field,
     sigma : Field,
 ) {
-    // v = Poseidon([sigma, rho])
-    let v = poseidon::poseidon::bn254::hash_2([sigma, rho]);
+    // Fiat-Shamir Challenge derivation from public commitments
+    // This cryptographically binds the challenge to the specific model and dataset
+    let v = poseidon::poseidon::bn254::hash_3([C_rho, C_dW, C_sigma]);
 
     // Binding relation inside the circuit
     assert(B == dW * v);
